@@ -9,9 +9,10 @@ module OpenTelemetry
     module Rails
       # The Instrumentation class contains logic to detect and install the Rails
       # instrumentation, while this Railtie is used to conventionally instrument
-      # the Rails application through its initialization hooks
+      # the Rails application through its initialization hooks.
       class Railtie < ::Rails::Railtie
         config.before_initialize do |app|
+          OpenTelemetry::Instrumentation::ActiveRecord::Instrumentation.instance.install({})
           OpenTelemetry::Instrumentation::Rack::Instrumentation.instance.install({})
 
           app.middleware.insert_before(

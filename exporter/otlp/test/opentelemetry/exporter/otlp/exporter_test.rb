@@ -132,7 +132,7 @@ describe OpenTelemetry::Exporter::OTLP::Exporter do
     let(:exporter) { OpenTelemetry::Exporter::OTLP::Exporter.new }
 
     before do
-      OpenTelemetry.tracer_provider = OpenTelemetry::SDK::Trace::TracerProvider.new(OpenTelemetry::SDK::Resources::Resource.telemetry_sdk)
+      OpenTelemetry.tracer_provider = OpenTelemetry::SDK::Trace::TracerProvider.new(resource: OpenTelemetry::SDK::Resources::Resource.telemetry_sdk)
     end
 
     it 'integrates with collector' do
@@ -199,12 +199,10 @@ describe OpenTelemetry::Exporter::OTLP::Exporter do
 
       result = exporter.export([span_data])
 
-      # Needed so it doesn't crash the test
-      encoded_logger_output = log_stream.string.encode('UTF-8', invalid: :replace, undef: :replace, replace: '?')
-
-      _(encoded_logger_output).must_match(
-        /ERROR -- : OpenTelemetry error: encoding error for key a and value ?/
+      _(log_stream.string).must_match(
+        /ERROR -- : OpenTelemetry error: encoding error for key a and value �/
       )
+
       _(result).must_equal(SUCCESS)
     ensure
       OpenTelemetry.logger = logger
@@ -274,7 +272,7 @@ describe OpenTelemetry::Exporter::OTLP::Exporter do
       span['i'] = 2
       span['s'] = 'val'
       span['a'] = [3, 4]
-      span.status = OpenTelemetry::Trace::Status.new(OpenTelemetry::Trace::Status::ERROR)
+      span.status = OpenTelemetry::Trace::Status.error
       child_ctx = OpenTelemetry::Trace.context_with_span(span)
       client = with_ids(trace_id, client_span_id) { tracer.start_span('client', with_parent: child_ctx, kind: :client, start_timestamp: start_timestamp + 2).finish(end_timestamp: end_timestamp) }
       client_ctx = OpenTelemetry::Trace.context_with_span(client)
